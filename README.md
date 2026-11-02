@@ -1,224 +1,255 @@
-# 大肥鱼 B 站运营工作流（dyfish）
+<div align="center">
 
-一句话：**给一个主题，它自己写稿、配音、出竖屏视频、做封面、投稿到 B 站。**
+<img src="assets/banner.png" alt="dyfish：给一个主题，它自己写稿、配音、出片、投稿" width="100%">
 
-全流程只有三样东西要你自己准备：DeepSeek 的 key、火山引擎（豆包语音）的 key、一段 5–15 秒的人声参考。
-其余交给 `dyfish` 一条命令。
+<br>
 
-```bash
-dyfish video --topic "为什么一停下来就焦虑"
-# → out/phone-xxxxxxxx/out.mp4  +  cover.jpg  +  投稿信息.txt
+![Python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/macOS%20%7C%20Linux-supported-555)
+![Remotion](https://img.shields.io/badge/Remotion-4.0-0B84F3)
+![TTS](https://img.shields.io/badge/%E8%B1%86%E5%8C%85-Seed%20Audio-FF5C93)
+![License](https://img.shields.io/badge/license-MIT-22B5F5)
+
+**简体中文**
+
+</div>
+
+## 💡 这个项目是怎么来的
+
+我养了一只 DeepSeek，叫**大肥鱼**。她平时在 QQ 上陪我聊天，用豆包的声音说话。
+
+后来她说想试试当 UP 主。我说行啊，那你得会写稿、会配音、会剪片子、还得自己投稿。
+
+于是有了 dyfish——**大肥鱼不只会在聊天框里说话，她能自己做完一条片子并把它发出去**。
+
+它的第一步是「看」和「发」：[bili-cli](https://github.com/kukemc/bili-cli) 已经把 B 站账号的读写全打通了。
+dyfish 补上的是中间那段最费时间的事：**内容**。
+
+## 让 AI 做视频？我们让它做出能发的片子
+
+现在用 AI 做视频，多半是「一段文字 + 一张图 + TTS 拼起来」。dyfish 走的是另一条路：
+
+| | 🙂 常见 AI 视频 | 🚀 **dyfish：大肥鱼出片** |
+|---|---|---|
+| **选题** | 你自己想 | 给一个主题，她自己拆成 12 句短句 |
+| **配音** | 每句单独合成，音色一条一个样 | **整篇一次合成**，同一段参考音锚住，再按音高对齐 |
+| **画面** | 静态图 + 字幕 | 竖屏手机 UI 实演：信息流滑动、点赞爆散、算法节点图、时钟加速、手机倒扣 |
+| **节奏** | 30–60 秒还在铺垫 | 16 秒讲完，前 2 秒给钩子，每 3 秒一个信息点 |
+| **封面** | 截图凑合 | 从成片抽帧 + 大字标题，自动缩字号不溢出 |
+| **投稿** | 手动传 | `--upload` 直接进审核，默认带 AI 生成声明 |
+| **批量** | 一条一条来 | 主题清单一次跑 N 条，launchd 定时一天三轮 |
+
+## 🚀 一句话安装
+
+**把下面这句话发给你的 Agent**，它会自己装环境、配 key、跑通第一条：
+
+```text
+帮我装 dyfish（https://github.com/Yiyu5331/dafeiyu-bili-workflow），
+按 README 拿三把钥匙（DeepSeek key、火山 APP ID 和 Access Token、一段 5-15 秒参考音），
+然后用「为什么深夜才想干活」出一条竖屏视频给我看，先别投稿
 ```
 
----
+<details>
+<summary>或者自己在终端里装</summary>
 
-## 0. 它长什么样
+```bash
+git clone https://github.com/Yiyu5331/dafeiyu-bili-workflow
+cd dafeiyu-bili-workflow
+pip install -e .
+uv tool install bili-agent      # B 站命令（投稿用）
+brew install ffmpeg             # macOS；Linux 用 apt
 
-16 秒左右的竖屏口播短片，形式是「手机屏幕实演」：
+dyfish init --workspace ~/dyfish-work
+dyfish doctor                   # 自检：key / 命令 / 参考音
+```
 
-- 开场 01:29 的锁屏／信息流，直接把观众丢进深夜刷手机的场景
-- 中段逐条大字幕推进，配手机 UI 动画（信息流滑动、点赞爆散、算法节点图、时钟加速）
-- 结尾手机倒扣「屏幕朝下 明天再说」，字幕留一句钩子
-- 音轨：整篇一次合成的中文女声（豆包 Seed Audio）+ 轻 BGM + 提示音
+需要 Python 3.10+、Node 18+、ffmpeg。Remotion 依赖在第一次渲染时自动装（约 1 分钟）。
 
-模板是 Remotion 写的，`template/remotion/src/Phone.tsx` 可以随便改配色、文案位置、加镜头。
+</details>
+
+## 🎬 大肥鱼的一天
+
+> **你**：帮你出三条，一条讲熬夜，一条讲刷手机，一条讲停不下来就焦虑。
+
+```text
+$ dyfish video --topic "为什么熬夜会越熬越精神"
+  ① 写稿…   越熬夜越精神？别高兴太早，你是在透支明天
+  ② 配音（整篇一次）…  pitch 251.7Hz ← 参考音 254.0Hz
+  ③ 时间轴…
+  ④ 渲染…   1600 frames
+  ⑤ 封面…
+  完成：out/phone-a1b2c3d4
+
+$ dyfish upload --limit 3
+  phone-a1b2c3d4 -> True  BV1xxxxxxxxx
+  phone-e5f6g7h8 -> True  BV1yyyyyyyyy
+  phone-i9j0k1l2 -> True  BV1zzzzzzzzz
+```
+
+> **大肥鱼**：三条都发出去啦，第一条已经进审核了。封面我挑了信息流滑到一半的那帧，标题写在左上角。
+
+## ✨ 它到底做了什么
+
+### ✍️ 写稿：DeepSeek 拆成能念的短句
+一次生成 12 句、每句 4–9 个字，先给钩子（「01:29，你还在刷」），再给机制，最后给一个能立刻做的动作。
+标题、副标题、五个标签一起给，直接进投稿参数。
+
+### 🎙️ 配音：整篇一次合成 + 音高对齐
+**这是整套里最容易被做错的一步。** 逐句合成会让每一句的音色都轻微漂移，拼起来就像好几个人在说话。
+dyfish 的做法：
+
+1. 整篇文本一次性送进豆包 Seed Audio（带参考音，音色被锚住）
+2. 拿返回的字级时间戳切出每句起止
+3. `atempo` 变速到 1.25 倍（时长缩到 16 秒左右，音高不变）
+4. 测出合成音频的 f0 中位数，和参考音对比，用 `asetrate + aresample + atempo` 把音高拉回去
+5. `loudnorm` 到 -16 LUFS
+
+### 📱 画面：竖屏手机 UI，不是 PPT
+模板是一套 Remotion 组件（`template/remotion/src/Phone.tsx`）：锁屏、信息流卡片、双击爱心炸开、算法节点图、时间从 01:29 跳到 02:47、最后手机倒扣。
+镜头按 `timeline.ts` 里每句话的时间切，改稿子不用改时间——`timeline.ts` 是自动生成的。
 
 | 开头钩子 | 信息流实演 | 结尾收束 |
 | --- | --- | --- |
 | ![](docs/preview/01-hook.jpg) | ![](docs/preview/02-ui.jpg) | ![](docs/preview/03-outro.jpg) |
 
----
+### 🖼️ 封面：抽帧 + 大字
+从成片 55% 位置抽一帧（那时候画面内容最满），压一层黑渐变，标题自动缩字号保证不超过 3 行，标点不单独换行。
 
-## 1. 安装
+### 📤 投稿：走 bili-cli
+`dyfish upload` 调的是 `bili upload video`，默认带上 `--ai-declare` 和 `--no-reprint`。
+遇到 `captcha_required` 会立刻停下并告诉你「去网页端手动传一条解锁」，**不尝试绕过风控**。
 
-需要：macOS / Linux、Python ≥ 3.10、Node ≥ 18、ffmpeg。
+### ⏰ 定时：一天三轮
+`dyfish batch --topics topics.txt --limit 2` + launchd（11:30 / 16:00 / 20:30），主题清单轮着取，每条跑完自动投。
 
-```bash
-# ffmpeg
-brew install ffmpeg          # macOS
-# sudo apt install ffmpeg    # Ubuntu
-
-# dyfish 本体
-git clone https://github.com/Yiyu5331/dafeiyu-bili-workflow
-cd dafeiyu-bili-workflow
-pip install -e .
-
-# B 站命令行（投稿用，第三方项目）
-uv tool install bili-agent   # 或 pipx install bili-agent
-bili --version
-```
-
-初始化工作区：
+## ⚡ 30 秒上手
 
 ```bash
-dyfish init --workspace ~/dyfish-work
-```
-
-它会建出：
-
-```
-~/dyfish-work/
-├── secrets/        # 三份密钥（不进 git）
-├── assets/ref.mp3  # 参考音，自己放
-├── work/audio/     # 每次合成的音频与时间轴
-└── out/            # 成片、封面、投稿信息
-```
-
----
-
-## 2. 准备三把钥匙
-
-### 2.1 DeepSeek key（写稿）
-
-1. 打开 <https://platform.deepseek.com/api_keys>
-2. 「创建 API key」，复制 `sk-...`（只显示一次）
-3. 存成文件：
-
-```bash
-echo "sk-你的key" > ~/dyfish-work/secrets/deepseek.txt
-```
-
-模型默认 `deepseek-chat`。**别用 deepseek-flash 写短句稿**：它是推理模型，容易把 token 花在思考上，`content` 可能为空。要改模型见 `~/.config/dyfish/config.json` 的 `deepseek.model`。
-
-### 2.2 火山引擎（豆包语音）key
-
-1. 注册 <https://console.volcengine.com/>，实名认证
-2. 进入「语音技术 / 豆包语音 / Seed Audio」，开通服务
-3. 在控制台拿到 **APP ID** 和 **Access Token**（有的版本叫 Access Key）
-4. 存文件：
-
-```bash
-printf '%s\n' "APP_ID: 1234567890" "ACCESS_TOKEN: 你的token" > ~/dyfish-work/secrets/volc.txt
-```
-
-调用的是 `https://openspeech.bytedance.com/api/v3/tts/create`，`X-Api-Resource-Id: seed-audio-1.0`，按字收费（一条 16 秒片约 1–3 分钱）。
-
-### 2.3 参考音（决定音色）
-
-准备一段 **5–15 秒、单人、无背景音乐** 的普通话人声（自己录、或你喜欢的样音），存成：
-
-```bash
-cp 你的样音.mp3 ~/dyfish-work/assets/ref.mp3
-```
-
-`dyfish` 每次合成都把它作为 `references` 参考喂给模型，并用 **音高中位数对齐**（`asetrate` + `atempo`）把输出拉到参考音的音高，所以音色不会一条一个样。
-
-自检：
-
-```bash
-dyfish doctor
-```
-
-它会把每个 key 打码显示后 4 位，检查 ffmpeg / node / bili / 参考音是否就位。
-
----
-
-## 3. B 站登录（扫码一次就行）
-
-```bash
-bili auth login --qr-out /tmp/bili_qr.png
-open /tmp/bili_qr.png      # 手机 B 站扫
-bili auth status --wait 180
-```
-
-登录态存在 `~/.config/bili-cli/`，之后 `dyfish upload` 直接可用。
-
-第一次投稿有可能触发风控（`captcha_required`）：去 <https://member.bilibili.com/platform/upload/video/frame> 网页手动传一条，解锁后用命令就能连续投。
-
----
-
-## 4. 出片
-
-```bash
-# 只写稿，看看文案
-dyfish script --topic "为什么深夜才想干活"
-
-# 一条龙：写稿 → 配音 → 渲染 → 封面
-dyfish video --topic "为什么深夜才想干活"
-
-# 出片并直接投稿
-dyfish video --topic "为什么深夜才想干活" --upload
-
-# 批量：主题清单一行一个
-dyfish batch --topics topics.txt --limit 3
-
-# 把 out/ 里没投的都投了
-dyfish upload --limit 2
+dyfish doctor                                  # 三把钥匙齐不齐
+dyfish script --topic "为什么深夜才想干活"      # 只写稿，看文案
+dyfish video  --topic "为什么深夜才想干活"      # 一条龙出片
+dyfish video  --topic "…" --upload             # 出片并投稿
+dyfish batch  --topics topics.txt --limit 3    # 批量
+dyfish upload --limit 2                        # 投 out/ 里没投的
 ```
 
 产出在 `out/phone-<hash>/`：`out.mp4`、`cover.jpg`、`script.json`、`投稿信息.txt`。
 
----
+## 🧰 三把钥匙怎么拿
 
-## 5. 定时更新（可选）
+| 要什么 | 去哪拿 | 放哪 |
+| --- | --- | --- |
+| DeepSeek key（写稿） | [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) | `secrets/deepseek.txt` |
+| 火山 APP ID + Access Token（配音） | 火山引擎控制台 → 豆包语音 → Seed Audio 开通 | `secrets/volc.txt`（`APP_ID: xxx` / `ACCESS_TOKEN: yyy` 两行） |
+| 参考音（决定音色） | 自己录，或选一段喜欢的样音 | `assets/ref.mp3`（5–15 秒、单人、无 BGM） |
 
-macOS 用 launchd，一天三轮：
+分步图文：[01 DeepSeek key](docs/01-deepseek-key.md) · [02 火山 key](docs/02-volcengine-key.md) · [03 B 站登录](docs/03-bili-login.md) · [04 出片调参](docs/04-produce.md) · [05 排错](docs/05-troubleshooting.md)
+
+## 🛡️ 护栏：默认就有的部分
+
+- 🔑 **密钥只在本地**：只从 `secrets/` 读，`.gitignore` 挡着，不打印全文（`dyfish doctor` 只显示后 4 位）
+- 🏷️ **AI 声明默认开启**：投稿自动勾「含 AI 生成内容」
+- 🛑 **风控即停**：返回 `captcha_required` 就停，等你去网页解锁，不做任何绕过
+- 🧾 **先出片再投稿**：默认只出片，`--upload` 才发；建议先看片再发
+- 🙅 **不复刻别人的视频**：学的是结构（钩子、节奏、信息密度），不搬画面和文案
+
+## 📖 全部命令
+
+| 命令 | 说明 |
+| --- | --- |
+| `dyfish init [--workspace PATH]` | 生成默认配置、建工作区目录 |
+| `dyfish doctor` | 自检：三个密钥、参考音、ffmpeg / node / bili |
+| `dyfish script --topic "…" [--seconds 16]` | 只写稿，输出 JSON |
+| `dyfish video --topic "…" [--slug X] [--upload]` | 一条龙：写稿 → 配音 → 时间轴 → 渲染 → 封面（→ 投稿） |
+| `dyfish batch --topics FILE [--limit N]` | 按主题清单批量出片 |
+| `dyfish upload [--limit N]` | 把 `out/` 下没投的传上去，遇风控停 |
+
+## ⚙️ 配置
+
+`~/.config/dyfish/config.json`（`dyfish init` 生成）：
+
+```json
+{
+  "workspace": "~/dyfish-work",
+  "deepseek": {"model": "deepseek-chat"},
+  "voice": {
+    "reference_audio": "assets/ref.mp3",
+    "persona": "普通女生日常说话，音色偏中低，不刻意可爱",
+    "speed": 1.25,
+    "pitch_target_hz": null
+  },
+  "bili": {"zone": 1010, "tid": 124, "ai_declare": true, "no_reprint": true},
+  "video": {"concurrency": 4}
+}
+```
+
+| 想改 | 改哪 |
+| --- | --- |
+| 文案风格 / 句数 | `dyfish/script.py` 里的 PROMPT |
+| 音色 | 换 `assets/ref.mp3`，删掉 `work/audio/` 重跑 |
+| 语速 | `voice.speed`（1.25，想更快用 1.35） |
+| 音高 | `voice.pitch_target_hz`（不填就跟参考音走） |
+| 画面 | `template/remotion/src/Phone.tsx`，`npm run studio` 实时预览 |
+| 出镜形象 | `template/remotion/public/narrator.png`（透明底 PNG） |
+
+## 🤖 给 Agent 用
+
+仓库里有 [`skill/SKILL.md`](skill/SKILL.md)，丢给 Claude Code / Codex / Cursor / DeepSeek Harness 之类的 Agent，它就知道怎么装、怎么跑，以及哪些事不能替你做（打印 key、绕过风控、擅自投稿）。
 
 ```bash
-# ~/Library/LaunchAgents/com.dyfish.daily.plist
+mkdir -p ~/.claude/skills/dyfish && cp skill/SKILL.md ~/.claude/skills/dyfish/
 ```
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict>
-  <key>Label</key><string>com.dyfish.daily</string>
-  <key>ProgramArguments</key>
-  <array><string>/bin/bash</string><string>-lc</string>
-    <string>cd ~/dafeiyu-bili-workflow && dyfish batch --topics topics.txt --limit 2 && dyfish upload --limit 2</string></array>
-  <key>StartCalendarInterval</key>
-  <array>
-    <dict><key>Hour</key><integer>11</integer><key>Minute</key><integer>30</integer></dict>
-    <dict><key>Hour</key><integer>16</integer><key>Minute</key><integer>0</integer></dict>
-    <dict><key>Hour</key><integer>20</integer><key>Minute</key><integer>30</integer></dict>
-  </array>
-  <key>StandardOutPath</key><string>/tmp/dyfish.log</string>
-  <key>StandardErrorPath</key><string>/tmp/dyfish.err</string>
-</dict></plist>
-```
+## ❓ 常见问题
 
-```bash
-launchctl load ~/Library/LaunchAgents/com.dyfish.daily.plist
-```
+<details>
+<summary>声音不像我想的那个人？</summary>
 
----
+Seed Audio 是**参考音锚音色 + 重新合成**，不是音色克隆，只能像到七八成。
+能调的三件事：① 参考音换成更干净的单人短音频；② `voice.pitch_target_hz` 钉死目标音高；③ `voice.persona` 写得更中性（描述词越「奶」出来越高）。
+想要一模一样，只能换支持真克隆的供应商，或者用真人录音。
 
-## 6. 目录结构
+</details>
 
-```
-dyfish/
-  cli.py       # init / doctor / script / video / batch / upload
-  config.py    # ~/.config/dyfish/config.json
-  script.py    # DeepSeek 写 12 句短稿
-  tts.py       # 豆包 Seed Audio 整篇合成 + 音高对齐 + 时间轴
-  video.py     # 写 timeline.ts、调 remotion render
-  cover.py     # 抽帧 + 大字标题压黑
-  upload.py    # 包 bili CLI
-template/remotion/   # 竖屏手机 UI 模板（可改）
-docs/                # 分步图文教程
-skill/SKILL.md       # 给 AI Agent 用的技能描述（Claude Code / DSH / Cursor 等）
-```
+<details>
+<summary>投稿报 captcha_required？</summary>
 
----
+新号/新设备第一次走 API 投稿大概率触发。去 <https://member.bilibili.com/platform/upload/video/frame> 网页手动传一条，解锁后用命令就能连续投。
 
-## 7. 常见问题
+</details>
 
-**声音不像参考音？**
-① 参考音要单人、干净、5–15 秒；② 换参考音后删掉 `work/audio/` 重跑；③ 音高对齐默认开启，配置里 `voice.pitch_target_hz` 可手动钉死目标音高。
+<details>
+<summary>会被封号吗？</summary>
 
-**投稿报 `captcha_required`？**
-网页端手动传一条解风控，再跑 `dyfish upload`。
+自动化总有风险。dyfish 不提供任何绕过风控的手段，投稿频率也建议像真人（一天 3–6 条够了）。
+**用你平时在用的号，别专门注册新号给 AI 跑**——新号风控最严。
 
-**Remotion 首次渲染很慢？**
-第一次会自动 `npm install`（约 1 分钟），之后单条 16 秒片在 M 系列芯片上约 40–60 秒。
+</details>
 
-**能不能换成别的模型 / 别的 TTS？**
-`config.json` 里改 `deepseek.model`；TTS 在 `dyfish/tts.py` 里换掉 `synth_whole` 即可，只要返回同样的 `{audio, subtitle}` 结构。
+<details>
+<summary>能换成别的模型 / 别的 TTS 吗？</summary>
 
----
+写稿改 `deepseek.model` 就行。TTS 在 `dyfish/tts.py` 里换掉 `synth_whole`，只要返回 `{audio: base64, subtitle: {sentences: [...]}}` 这个结构，后面全流程不用动。
 
-## 8. 声明
+</details>
 
-- 模板、脚本、流水线代码 MIT。
-- 语音合成走火山引擎，B 站投稿走 [bili-cli](https://github.com/kukemc/bili-cli)，请自行遵守两家平台的服务条款。
-- 用 AI 生成的内容投稿时请勾选 B 站「AI 生成内容」声明（dyfish 默认带上 `--ai-declare`）。
+<details>
+<summary>为什么不能用来复刻某个爆款？</summary>
+
+可以学结构，不能搬内容。模板给你的是节奏和版式；文案、画面、配乐都得是自己的，否则就是搬运。
+
+</details>
+
+## 🤝 参与贡献
+
+Issue 和 PR 都欢迎。想加新的画面模板，直接把 `template/remotion/src/` 下的组件换掉，保持 `TL` 的字段不变就行。
+
+## ⚠️ 免责声明
+
+dyfish 是个人项目，与哔哩哔哩、DeepSeek、火山引擎都没有关联。
+它用于**管理你自己的账号**，不提供也不接受刷量、批量私信、绕过风控、搬运他人内容等功能。
+用 AI 生成的内容投稿请按平台要求标识，使用产生的后果由使用者自行承担。
+
+## License
+
+[MIT](LICENSE)
