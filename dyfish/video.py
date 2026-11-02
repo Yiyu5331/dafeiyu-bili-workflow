@@ -48,8 +48,13 @@ def write_timeline(proj: Path, tl: dict, lines: list[str]) -> None:
     (proj / "src" / "timeline.ts").write_text("\n".join(out), encoding="utf-8")
 
 
-def render(cfg, voice: Path, out_mp4: Path, concurrency: int | None = None) -> None:
+COMPOSITIONS = {"phone": "PhoneUI", "reveal": "Reveal"}
+
+
+def render(cfg, voice: Path, out_mp4: Path, concurrency: int | None = None, style: str = "phone") -> None:
+    """style: phone（全屏手机 UI 实演）/ reveal（暗金仪式感大字）"""
     proj = ensure_template(cfg)
     shutil.copyfile(voice, proj / "public" / "voice_v6.mp3")
-    subprocess.run(["npx", "remotion", "render", "src/index.ts", "PhoneUI", str(out_mp4),
+    comp = COMPOSITIONS.get(style, "PhoneUI")
+    subprocess.run(["npx", "remotion", "render", "src/index.ts", comp, str(out_mp4),
                     f"--concurrency={concurrency or cfg.get('video.concurrency', 4)}"], cwd=proj, check=True)

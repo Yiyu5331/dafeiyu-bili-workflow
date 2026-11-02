@@ -87,7 +87,7 @@ dyfish doctor                   # 自检：key / 命令 / 参考音
 > **你**：帮你出三条，一条讲熬夜，一条讲刷手机，一条讲停不下来就焦虑。
 
 ```text
-$ dyfish video --topic "为什么熬夜会越熬越精神"
+$ dyfish video --style reveal --topic "为什么熬夜会越熬越精神"
   ① 写稿…   越熬夜越精神？别高兴太早，你是在透支明天
   ② 配音（整篇一次）…  pitch 251.7Hz ← 参考音 254.0Hz
   ③ 时间轴…

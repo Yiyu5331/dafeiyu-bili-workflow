@@ -57,7 +57,7 @@ def cmd_script(a):
     print(json.dumps(sc, ensure_ascii=False, indent=2))
 
 
-def _produce(cfg, topic, slug, formula="揭秘", upload=False):
+def _produce(cfg, topic, slug, formula="揭秘", upload=False, style="phone"):
     import hashlib
 
     slug = slug or hashlib.md5(topic.encode()).hexdigest()[:8]
@@ -81,7 +81,7 @@ def _produce(cfg, topic, slug, formula="揭秘", upload=False):
     shutil.copyfile(work / "voice.mp3", proj / "public" / "voice_v6.mp3")
 
     print("④ 渲染…")
-    render(cfg, work / "voice.mp3", out / "out.mp4")
+    render(cfg, work / "voice.mp3", out / "out.mp4", style=style)
 
     print("⑤ 封面…")
     frame = cover_mod.grab_frame(out / "out.mp4", out / "cover_frame.jpg")
@@ -104,7 +104,7 @@ def a_upload(a):
 
 def cmd_video(a):
     cfg = Config.load()
-    _produce(cfg, a.topic, a.slug, getattr(a, "formula", "揭秘"), getattr(a, "upload", False))
+    _produce(cfg, a.topic, a.slug, getattr(a, "formula", "揭秘"), getattr(a, "upload", False), getattr(a, "style", "phone"))
 
 
 def cmd_batch(a):
@@ -223,6 +223,7 @@ def main(argv=None):
     p.add_argument("--topic", required=True)
     p.add_argument("--slug")
     p.add_argument("--formula", default="揭秘", choices=["揭秘", "清单", "仪式"])
+    p.add_argument("--style", default="phone", choices=["phone", "reveal"], help="phone=全屏手机UI实演 / reveal=暗金仪式感大字")
     p.add_argument("--upload", action="store_true", help="出片后立刻投稿")
     p.set_defaults(func=cmd_video)
 
