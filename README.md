@@ -35,7 +35,7 @@ brew install ffmpeg          # macOS
 # sudo apt install ffmpeg    # Ubuntu
 
 # dyfish 本体
-git clone https://github.com/<你>/dafeiyu-bili-workflow
+git clone https://github.com/Yiyu5331/dafeiyu-bili-workflow
 cd dafeiyu-bili-workflow
 pip install -e .
 

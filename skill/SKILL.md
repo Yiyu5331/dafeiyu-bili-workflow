@@ -11,6 +11,15 @@ description: 用 dyfish 流水线给 B 站账号做竖屏口播视频并投稿�
 - 用户要把这套流程搬到自己机器上（装环境、配 key、跑通）
 - 用户要改模板画面、换音色、换文案风格
 
+## 安装（第一次）
+
+```bash
+git clone https://github.com/Yiyu5331/dafeiyu-bili-workflow && cd dafeiyu-bili-workflow
+pip install -e .
+uv tool install bili-agent
+dyfish init --workspace ~/dyfish-work
+```
+
 ## 前置检查（每次先跑）
 
 ```bash
