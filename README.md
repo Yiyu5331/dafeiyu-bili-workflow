@@ -235,6 +235,10 @@ dyfish upload --limit 2                        # 投 out/ 里没投的
 mkdir -p ~/.claude/skills/dyfish && cp skill/SKILL.md ~/.claude/skills/dyfish/
 ```
 
+## 📚 完整教学文档
+
+想自己从零搭一套、或者教别人怎么搭，看 [docs/07-从零搭一套工作流.md](docs/07-从零搭一套工作流.md)。
+
 ## ❓ 常见问题
 
 <details>
