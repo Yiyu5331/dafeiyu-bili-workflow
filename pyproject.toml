@@ -1,0 +1,21 @@
+[project]
+name = "dyfish"
+version = "0.1.0"
+description = "大肥鱼 B 站运营工作流：DeepSeek 写稿 + 豆包配音 + Remotion 竖屏模板 + 自动投稿"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = ["pillow>=10", "numpy>=1.24", "requests>=2.31"]
+
+[project.scripts]
+dyfish = "dyfish.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["dyfish"]
+
+[tool.setuptools.package-data]
+dyfish = ["../template/**"]

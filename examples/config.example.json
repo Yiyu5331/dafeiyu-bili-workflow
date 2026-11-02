@@ -1,0 +1,19 @@
+{
+  "workspace": "~/dyfish-work",
+  "deepseek": {"api": "https://api.deepseek.com/chat/completions", "model": "deepseek-chat"},
+  "volc": {
+    "api": "https://openspeech.bytedance.com/api/v3/tts/create",
+    "resource_id": "seed-audio-1.0",
+    "app_id_file": "~/dyfish-work/secrets/volc.txt",
+    "access_token_file": "~/dyfish-work/secrets/volc.txt"
+  },
+  "voice": {
+    "reference_audio": "~/dyfish-work/assets/ref.mp3",
+    "persona": "普通女生日常说话，音色偏中低，不刻意可爱",
+    "template": "{persona}，用很自然的口语说，只说引号里的这句话，一字不差：“{text}”",
+    "speed": 1.25,
+    "pitch_target_hz": null
+  },
+  "bili": {"zone": 1010, "tid": 124, "ai_declare": true, "no_reprint": true},
+  "video": {"concurrency": 4}
+}
