@@ -23,6 +23,10 @@ dyfish video --topic "为什么一停下来就焦虑"
 
 模板是 Remotion 写的，`template/remotion/src/Phone.tsx` 可以随便改配色、文案位置、加镜头。
 
+| 开头钩子 | 信息流实演 | 结尾收束 |
+| --- | --- | --- |
+| ![](docs/preview/01-hook.jpg) | ![](docs/preview/02-ui.jpg) | ![](docs/preview/03-outro.jpg) |
+
 ---
 
 ## 1. 安装
