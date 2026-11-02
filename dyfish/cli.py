@@ -53,11 +53,11 @@ def cmd_doctor(a):
 
 def cmd_script(a):
     cfg = Config.load()
-    sc = write_script(cfg, a.topic, a.seconds)
+    sc = write_script(cfg, a.topic, a.seconds, getattr(a, "formula", "揭秘"))
     print(json.dumps(sc, ensure_ascii=False, indent=2))
 
 
-def _produce(cfg, topic, slug, skip_upload=False):
+def _produce(cfg, topic, slug, formula="揭秘", upload=False):
     import hashlib
 
     slug = slug or hashlib.md5(topic.encode()).hexdigest()[:8]
@@ -65,7 +65,7 @@ def _produce(cfg, topic, slug, skip_upload=False):
     out.mkdir(parents=True, exist_ok=True)
 
     print("① 写稿…")
-    sc = write_script(cfg, topic)
+    sc = write_script(cfg, topic, formula=formula)
     lines = sc["lines"]
     (out / "script.json").write_text(json.dumps(sc, ensure_ascii=False, indent=2), encoding="utf-8")
     print("   ", sc["title"])
@@ -92,7 +92,7 @@ def _produce(cfg, topic, slug, skip_upload=False):
         f"标签：{'、'.join(sc.get('tags', []))}\n时长：{tl['total']}s\nAI 声明：是\n", encoding="utf-8")
     print("完成：", out)
 
-    if a_upload(a):
+    if upload:
         r = do_upload(cfg, out / "out.mp4", sc["title"], sc.get("tags", []), sc.get("subtitle", ""), out / "cover.jpg")
         print("投稿：", r)
     return out
@@ -104,7 +104,7 @@ def a_upload(a):
 
 def cmd_video(a):
     cfg = Config.load()
-    _produce(cfg, a.topic, a.slug)
+    _produce(cfg, a.topic, a.slug, getattr(a, "formula", "揭秘"), getattr(a, "upload", False))
 
 
 def cmd_batch(a):
@@ -216,11 +216,13 @@ def main(argv=None):
     p = sub.add_parser("script", help="只写稿")
     p.add_argument("--topic", required=True)
     p.add_argument("--seconds", type=int, default=16)
+    p.add_argument("--formula", default="揭秘", choices=["揭秘", "清单", "仪式"])
     p.set_defaults(func=cmd_script)
 
     p = sub.add_parser("video", help="一条龙出片")
     p.add_argument("--topic", required=True)
     p.add_argument("--slug")
+    p.add_argument("--formula", default="揭秘", choices=["揭秘", "清单", "仪式"])
     p.add_argument("--upload", action="store_true", help="出片后立刻投稿")
     p.set_defaults(func=cmd_video)
 
