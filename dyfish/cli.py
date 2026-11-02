@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from . import cover as cover_mod
+from . import ops
 from .config import CONFIG_PATH, Config
 from .script import write_script
 from .tts import make_voice
@@ -138,6 +139,69 @@ def cmd_upload(a):
             break
 
 
+def cmd_scroll(a):
+    cfg = Config.load()
+    cands = ops.scroll(cfg, a.limit, a.zone)
+    for c in cands:
+        print(f"{c['bvid']}  {c.get('views') or '?':>10}  {c['title']}")
+    if not cands:
+        print("没刷到新东西（都看过了？）")
+    print("\n挑一个标题丢给：dyfish video --topic \"…\"")
+
+
+def cmd_inspect(a):
+    r = ops.inspect(a.bv)
+    print(json.dumps(r.get("data") if r.get("ok") else r.get("error"), ensure_ascii=False, indent=2)[:4000])
+
+
+def cmd_inbox(a):
+    r = ops.inbox(a.limit)
+    for k, v in r.items():
+        print(f"== {k}")
+        print(json.dumps(v.get("data") if v.get("ok") else v.get("error"), ensure_ascii=False, indent=2)[:1500])
+
+
+def cmd_stats(a):
+    r = ops.stats()
+    for k, v in r.items():
+        print(f"== {k}")
+        print(json.dumps(v.get("data") if v.get("ok") else v.get("error"), ensure_ascii=False, indent=2)[:1800])
+
+
+def cmd_report(a):
+    cfg = Config.load()
+    p = ops.report(cfg.workspace)
+    print("日报写好了：", p)
+
+
+def cmd_day(a):
+    """一天的全流程：刷 → 挑 → 出片 →（投）→ 回 → 复盘。"""
+    cfg = Config.load()
+    print("① 刷热门找选题…")
+    cands = ops.scroll(cfg, a.limit * 6, a.zone)
+    print(f"   刷到 {len(cands)} 条没看过的")
+    topics = ops.pick_topics(cands, a.topics)
+    for t in topics:
+        print("   选：", t)
+    if not topics:
+        print("没挑到合适的选题，先停了")
+        return
+    for t in topics:
+        try:
+            _produce(cfg, t, None)
+        except SystemExit as e:
+            print(f"！{t} 失败：{e}")
+    if a.upload:
+        print("② 投稿…")
+        a.limit = len(topics)
+        cmd_upload(a)
+    print("③ 收件箱…")
+    cmd_inbox(type("A", (), {"limit": 5})())
+    print("④ 复盘…")
+    p = ops.report(cfg.workspace)
+    print("   日报：", p)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser("dyfish", description="大肥鱼 B 站出片流水线")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -168,6 +232,32 @@ def main(argv=None):
     p = sub.add_parser("upload", help="把 out/ 下没投的传上去")
     p.add_argument("--limit", type=int, default=2)
     p.set_defaults(func=cmd_upload)
+
+    p = sub.add_parser("scroll", help="刷热门/推荐，挑选题")
+    p.add_argument("--limit", type=int, default=12)
+    p.add_argument("--zone")
+    p.set_defaults(func=cmd_scroll)
+
+    p = sub.add_parser("inspect", help="拆一条视频（AI 总结/字幕/热评/画面）")
+    p.add_argument("bv")
+    p.set_defaults(func=cmd_inspect)
+
+    p = sub.add_parser("inbox", help="收件箱 + 没回的评论")
+    p.add_argument("--limit", type=int, default=10)
+    p.set_defaults(func=cmd_inbox)
+
+    p = sub.add_parser("stats", help="账号数据与稿件数据")
+    p.set_defaults(func=cmd_stats)
+
+    p = sub.add_parser("report", help="写一份运营日报")
+    p.set_defaults(func=cmd_report)
+
+    p = sub.add_parser("day", help="一天全流程：刷→挑→出片→（投）→回→复盘")
+    p.add_argument("--topics", type=int, default=2, help="出几条")
+    p.add_argument("--limit", type=int, default=8, help="刷多少条候选")
+    p.add_argument("--zone")
+    p.add_argument("--upload", action="store_true")
+    p.set_defaults(func=cmd_day)
 
     a = ap.parse_args(argv)
     a.func(a)

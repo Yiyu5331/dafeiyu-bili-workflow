@@ -25,6 +25,21 @@
 它的第一步是「看」和「发」：[bili-cli](https://github.com/kukemc/bili-cli) 已经把 B 站账号的读写全打通了。
 dyfish 补上的是中间那段最费时间的事：**内容**。
 
+## 它不是「发视频工具」，是运营一个账号的全流程
+
+一条内容从哪来、发出去之后怎么办、下一条做什么——这三件事才是运营。dyfish 把它们串成一个闭环：
+
+| 阶段 | 干什么 | 命令 |
+| --- | --- | --- |
+| 👀 **刷** | 刷热门/推荐，只留没看过的，找出今天值得讲的点 | `dyfish scroll` |
+| 🔍 **拆** | 一条命令拿全：AI 总结 + 字幕 + 章节 + 热评 + 弹幕高能 + 画面总览 | `dyfish inspect BV…` |
+| ✍️ **写** | DeepSeek 拆成 12 句能念的短句 | 自动 |
+| 🎙️ **做** | 豆包配音 + Remotion 竖屏模板 + 封面 | `dyfish video` |
+| 📤 **发** | 投稿进审核，默认带 AI 声明 | `dyfish upload` |
+| 💬 **回** | 收件箱看回复/@/赞/私信，没回的评论单独列出来 | `dyfish inbox` |
+| 📊 **看** | 账号总览、30 天趋势、单稿完播率，写成日报 | `dyfish stats` / `dyfish report` |
+| 🔁 **一条龙** | 上面全套连起来跑 | `dyfish day --topics 2` |
+
 ## 让 AI 做视频？我们让它做出能发的片子
 
 现在用 AI 做视频，多半是「一段文字 + 一张图 + TTS 拼起来」。dyfish 走的是另一条路：
@@ -86,7 +101,16 @@ $ dyfish upload --limit 3
   phone-i9j0k1l2 -> True  BV1zzzzzzzzz
 ```
 
-> **大肥鱼**：三条都发出去啦，第一条已经进审核了。封面我挑了信息流滑到一半的那帧，标题写在左上角。
+$ dyfish day --topics 2
+  ① 刷热门找选题…   刷到 34 条没看过的
+     选：高糖 VS 戒糖 14 天，真的差别很大吗
+     选：为什么你一坐下就摸手机
+  ② 出片 ×2 … 完成
+  ③ 收件箱…   2 条新回复 · 1 条私信 · 3 条没回的评论
+  ④ 复盘…     日报：out/日报.md
+```
+
+> **大肥鱼**：今天两条发出去了，昨天那条完播率 41%，比前一条高 9 个点。有一条评论问「糖到底能不能吃」，我用数据回了他。
 
 ## ✨ 它到底做了什么
 
@@ -118,6 +142,11 @@ dyfish 的做法：
 ### 📤 投稿：走 bili-cli
 `dyfish upload` 调的是 `bili upload video`，默认带上 `--ai-declare` 和 `--no-reprint`。
 遇到 `captcha_required` 会立刻停下并告诉你「去网页端手动传一条解锁」，**不尝试绕过风控**。
+
+### 💬 发完之后：回消息、看数据
+`dyfish inbox` 把新回复、@、赞、私信和**还没回过的评论**一起列出来，每条带 `reply_with` 现成命令；
+`dyfish stats` 拉账号总览、30 天趋势和每条稿件的完播率、互动率；`dyfish report` 汇总成一份日报。
+`dyfish day` 把「刷选题 → 出片 → 投稿 → 回消息 → 复盘」连起来，是真正的一天。
 
 ### ⏰ 定时：一天三轮
 `dyfish batch --topics topics.txt --limit 2` + launchd（11:30 / 16:00 / 20:30），主题清单轮着取，每条跑完自动投。
@@ -163,6 +192,12 @@ dyfish upload --limit 2                        # 投 out/ 里没投的
 | `dyfish video --topic "…" [--slug X] [--upload]` | 一条龙：写稿 → 配音 → 时间轴 → 渲染 → 封面（→ 投稿） |
 | `dyfish batch --topics FILE [--limit N]` | 按主题清单批量出片 |
 | `dyfish upload [--limit N]` | 把 `out/` 下没投的传上去，遇风控停 |
+| `dyfish scroll [--limit N] [--zone knowledge]` | 刷热门/推荐，标记已看过，输出候选选题 |
+| `dyfish inspect BV…` | 拆一条视频：AI 总结 / 字幕 / 热评 / 画面总览 / 弹幕高光 |
+| `dyfish inbox [--limit N]` | 收件箱（回复 / @ / 赞 / 私信）+ 还没回的评论 |
+| `dyfish stats` | 账号数据：总览、30 天趋势、稿件数据 |
+| `dyfish report` | 把上面这些写成 `out/日报.md` |
+| `dyfish day [--topics 2] [--upload]` | 一天全流程：刷 → 挑 → 出片 →（投）→ 收件箱 → 复盘 |
 
 ## ⚙️ 配置
 
